@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Финансовый трекер</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header h2 { font-size: 24px; }
+        .month-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 25px;
+        }
+        .month-selector button {
+            background: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .month-selector span {
+            font-size: 18px;
+            font-weight: bold;
+            min-width: 150px;
+            text-align: center;
+        }
+        .content { padding: 30px; }
+        .section {
+            margin-bottom: 40px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+        }
+        .section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+            padding-left: 15px;
+        }
+        .form-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        input, select, button {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .transaction-list {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .transaction-item {
+            background: white;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .income-amount { color: #28a745; font-weight: bold; }
+        .expense-amount { color: #dc3545; font-weight: bold; }
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .stat-label { font-size: 14px; color: #666; margin-bottom: 8px; }
+        .stat-value { font-size: 28px; font-weight: bold; }
+        .stat-value.positive { color: #28a745; }
+        .stat-value.negative { color: #dc3545; }
+        .expense-breakdown { margin-top: 20px; }
+        .breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .year-stats {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 30px;
+        }
+        .year-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        @media (max-width: 768px) {
+            .content { padding: 15px; }
+            .form-row { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h2>💰 Финансовый трекер</h2>
+        <div class="month-selector">
+            <button id="prevMonth">◀</button>
+            <span id="currentMonth">Январь 2024</span>
+            <button id="nextMonth">▶</button>
+        </div>
+    </div>
+    <div class="content">
+        <div class="section">
+            <h3>📈 Доходы</h3>
+            <div class="form-row">
+                <input type="text" id="incomeDesc" placeholder="Описание" style="flex:2">
+                <input type="number" id="incomeAmount" placeholder="Сумма" style="flex:1">
+                <button class="btn-primary" id="addIncomeBtn">➕ Добавить доход</button>
+            </div>
+            <div id="incomeList" class="transaction-list"></div>
+        </div>
+        
+        <div class="section">
+            <h3>💸 Расходы</h3>
+            <div class="form-row">
+                <select id="expenseCategory" style="flex:1">
+                    <option value="obligatory">🏠 Обязательные</option>
+                    <option value="impulsive">⚡ Импульсные</option>
+                    <option value="wishes">💭 Желания</option>
+                </select>
+                <input type="text" id="expenseDesc" placeholder="Описание" style="flex:2">
+                <input type="number" id="expenseAmount" placeholder="Сумма" style="flex:1">
+                <button class="btn-primary" id="addExpenseBtn">➕ Добавить расход</button>
+            </div>
+            <div id="expenseList" class="transaction-list"></div>
+        </div>
+        
+        <div class="section">
+            <h3>📊 Итоги месяца</h3>
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-label">Доходы</div><div class="stat-value positive" id="totalIncome">0 ₽</div></div>
+                <div class="stat-card"><div class="stat-label">Расходы</div><div class="stat-value negative" id="totalExpense">0 ₽</div></div>
+                <div class="stat-card"><div class="stat-label">Баланс</div><div class="stat-value" id="balance">0 ₽</div></div>
+            </div>
+            <div class="expense-breakdown"><h4>По категориям:</h4><div id="categoryBreakdown"></div></div>
+        </div>
+        
+        <div class="year-stats">
+            <h4>📅 Годовая статистика</h4>
+            <div class="year-grid" id="yearStats"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    class FinanceTracker {
+        constructor() {
+            this.data = this.loadData();
+            this.currentYear = new Date().getFullYear();
+            this.currentMonth = new Date().getMonth();
+            this.init();
+        }
+        loadData() {
+            const saved = localStorage.getItem('financeTracker');
+            return saved ? JSON.parse(saved) : { transactions: [] };
+        }
+        saveData() { localStorage.setItem('financeTracker', JSON.stringify(this.data)); }
+        
+        addTransaction(type, category, desc, amount, year, month) {
+            this.data.transactions.push({
+                id: Date.now(), type, category, desc, amount: parseFloat(amount),
+                year, month, date: new Date().toISOString()
+            });
+            this.saveData();
+            this.render();
+        }
+        
+        deleteTransaction(id) {
+            this.data.transactions = this.data.transactions.filter(t => t.id !== id);
+            this.saveData();
+            this.render();
+        }
+        
+        getMonthTransactions(year, month) {
+            return this.data.transactions.filter(t => t.year === year && t.month === month);
+        }
+        
+        getMonthStats(year, month) {
+            const transactions = this.getMonthTransactions(year, month);
+            const incomes = transactions.filter(t => t.type === 'income');
+            const expenses = transactions.filter(t => t.type === 'expense');
+            const totalIncome = incomes.reduce((s, t) => s + t.amount, 0);
+            const totalExpense = expenses.reduce((s, t) => s + t.amount, 0);
+            const expensesByCategory = { obligatory: 0, impulsive: 0, wishes: 0 };
+            expenses.forEach(e => { if (expensesByCategory[e.category] !== undefined) expensesByCategory[e.category] += e.amount; });
+            return { totalIncome, totalExpense, balance: totalIncome - totalExpense, expensesByCategory, incomes, expenses };
+        }
+        
+        getYearStats(year) {
+            const monthlyStats = [];
+            for (let m = 0; m < 12; m++) monthlyStats.push(this.getMonthStats(year, m));
+            return {
+                monthlyStats,
+                totalYearIncome: monthlyStats.reduce((s, m) => s + m.totalIncome, 0),
+                totalYearExpense: monthlyStats.reduce((s, m) => s + m.totalExpense, 0),
+                yearBalance: monthlyStats.reduce((s, m) => s + m.balance, 0)
+            };
+        }
+        
+        changeMonth(delta) {
+            this.currentMonth += delta;
+            if (this.currentMonth < 0) { this.currentMonth = 11; this.currentYear--; }
+            if (this.currentMonth > 11) { this.currentMonth = 0; this.currentYear++; }
+            this.render();
+        }
+        
+        render() {
+            const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+            document.getElementById('currentMonth').textContent = `${monthNames[this.currentMonth]} ${this.currentYear}`;
+            const stats = this.getMonthStats(this.currentYear, this.currentMonth);
+            this.renderIncomeList(stats.incomes);
+            this.renderExpenseList(stats.expenses);
+            document.getElementById('totalIncome').textContent = `${stats.totalIncome.toFixed(2)} ₽`;
+            document.getElementById('totalExpense').textContent = `${stats.totalExpense.toFixed(2)} ₽`;
+            const balEl = document.getElementById('balance');
+            balEl.textContent = `${stats.balance.toFixed(2)} ₽`;
+            balEl.className = `stat-value ${stats.balance >= 0 ? 'positive' : 'negative'}`;
+            const catNames = { obligatory: 'Обязательные', impulsive: 'Импульсные', wishes: 'Желания' };
+            document.getElementById('categoryBreakdown').innerHTML = Object.entries(stats.expensesByCategory).map(([k,v]) => `<div class="breakdown-item"><span>${catNames[k]}</span><strong>${v.toFixed(2)} ₽</strong></div>`).join('');
+            this.renderYearStats();
+        }
+        
+        renderIncomeList(incomes) {
+            const container = document.getElementById('incomeList');
+            if (!incomes.length) { container.innerHTML = '<div style="text-align:center;padding:20px;color:#999;">Нет доходов</div>'; return; }
+            container.innerHTML = incomes.map(i => `<div class="transaction-item"><div><strong>💰 ${i.desc}</strong><br><small>${new Date(i.date).toLocaleDateString()}</small></div><div class="income-amount">+${i.amount} ₽</div><button class="delete-btn" onclick="tracker.deleteTransaction(${i.id})">✕</button></div>`).join('');
+        }
+        
+        renderExpenseList(expenses) {
+            const container = document.getElementById('expenseList');
+            const catNames = { obligatory: '🏠 Обязательные', impulsive: '⚡ Импульсные', wishes: '💭 Желания' };
+            if (!expenses.length) { container.innerHTML = '<div style="text-align:center;padding:20px;color:#999;">Нет расходов</div>'; return; }
+            container.innerHTML = expenses.map(e => `<div class="transaction-item"><div><strong>${catNames[e.category]}</strong> - ${e.desc}<br><small>${new Date(e.date).toLocaleDateString()}</small></div><div class="expense-amount">-${e.amount} ₽</div><button class="delete-btn" onclick="tracker.deleteTransaction(${e.id})">✕</button></div>`).join('');
+        }
+        
+        renderYearStats() {
+            const stats = this.getYearStats(this.currentYear);
+            const months = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+            const container = document.getElementById('yearStats');
+            container.innerHTML = `
+                <div class="stat-card" style="background:rgba(255,255,255,0.2)"><div class="stat-label">Годовой доход</div><div style="font-size:24px;color:#90EE90">${stats.totalYearIncome.toFixed(0)} ₽</div></div>
+                <div class="stat-card" style="background:rgba(255,255,255,0.2)"><div class="stat-label">Годовой расход</div><div style="font-size:24px;color:#FFB6C1">${stats.totalYearExpense.toFixed(0)} ₽</div></div>
+                <div class="stat-card" style="background:rgba(255,255,255,0.2)"><div class="stat-label">Годовой баланс</div><div style="font-size:24px;color:${stats.yearBalance>=0?'#90EE90':'#FFB6C1'}">${stats.yearBalance>=0?'+':''}${stats.yearBalance.toFixed(0)} ₽</div></div>
+                ${stats.monthlyStats.map((m,i)=>`<div class="stat-card" style="background:rgba(255,255,255,0.1)"><div class="stat-label">${months[i]}</div><div style="font-size:16px;color:${m.balance>=0?'#90EE90':'#FFB6C1'}">${m.balance>=0?'+':''}${m.balance.toFixed(0)}</div><div style="font-size:11px">Д:${m.totalIncome.toFixed(0)}</div></div>`).join('')}
+            `;
+        }
+        
+        init() {
+            this.render();
+            document.getElementById('prevMonth').onclick = () => this.changeMonth(-1);
+            document.getElementById('nextMonth').onclick = () => this.changeMonth(1);
+            document.getElementById('addIncomeBtn').onclick = () => {
+                let d=document.getElementById('incomeDesc').value, a=document.getElementById('incomeAmount').value;
+                if(!d||!a||a<=0){alert('Заполните описание и сумму');return;}
+                this.addTransaction('income',null,d,a,this.currentYear,this.currentMonth);
+                document.getElementById('incomeDesc').value=''; document.getElementById('incomeAmount').value='';
+            };
+            document.getElementById('addExpenseBtn').onclick = () => {
+                let c=document.getElementById('expenseCategory').value, d=document.getElementById('expenseDesc').value, a=document.getElementById('expenseAmount').value;
+                if(!d||!a||a<=0){alert('Заполните описание и сумму');return;}
+                this.addTransaction('expense',c,d,a,this.currentYear,this.currentMonth);
+                document.getElementById('expenseDesc').value=''; document.getElementById('expenseAmount').value='';
+            };
+        }
+    }
+    let tracker = new FinanceTracker();
+</script>
+</body>
+</html>
